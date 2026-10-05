@@ -7,14 +7,14 @@ public class enemyMove : MonoBehaviour
     public Vector3 desiredLocation;
     private NavMeshAgent agent;
 
-    void Start()
+    protected virtual void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         
     }
 
     // Update is called once per frame
-    void Update()
+    protected virtual void Update()
     {
         if(desiredLocation != null)
         {
