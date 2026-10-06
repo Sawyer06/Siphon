@@ -7,6 +7,9 @@ public class enemyMove : MonoBehaviour
     public Vector3 desiredLocation;
     private NavMeshAgent agent;
 
+    public float walkSpeed = 3;
+    public float runSpeed = 6;
+
     protected virtual void Start()
     {
         agent = GetComponent<NavMeshAgent>();

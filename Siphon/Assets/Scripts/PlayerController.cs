@@ -33,7 +33,8 @@ public class PlayerController : MonoBehaviour
             speed = walkSpeed;
         }
 
-        playerBody.transform.rotation = Quaternion.LookRotation(-movement);
+        if (movement.x != 0 || movement.z != 0)
+            playerBody.transform.rotation = Quaternion.LookRotation(-movement);
     }
 
     private void FixedUpdate()
