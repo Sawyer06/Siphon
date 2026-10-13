@@ -35,6 +35,7 @@ public class EnforcerAI : enemyMove
         navAgent.speed = walkSpeed * movementMultiplier;
         navAgent.destination = PatrolPoints[curPatrolPoint].position;
 
+        Debug.Log("Agent Start Destination: " + navAgent.destination);
 
         isChase = false;
         isSuspicious = false;
@@ -67,14 +68,22 @@ public class EnforcerAI : enemyMove
 
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerStay(Collider other)
     {
         if (other.gameObject.CompareTag("Player"))
         {
-            lastLocationDetected = other.transform; 
-            //if(<= 2.0f){ //if the player is close enough... use that .distance method
-            //  isChase = true;
-            //}
+            lastLocationDetected = other.transform;
+
+            // Find distance to the player
+            float currentDistance = Vector3.Distance(transform.position, lastLocationDetected.position);
+
+            // If player is in range and enforcer is not currently chasing, switch behavior state.
+            if (currentDistance <= 5.0f && enforcerAiBehaviors != Behaviors.Chase)
+            {
+                isChase = true;
+                timeUntilUnaware = 0.0f;
+                ChangeBehavior(Behaviors.Chase);
+            }
         }
     }
 
@@ -93,6 +102,10 @@ public class EnforcerAI : enemyMove
             case Behaviors.Chase:
                 CheckAware();
                 break;
+
+            case Behaviors.Searching:
+                Wander();
+                break;
         }
     }
     void ChangeBehavior(Behaviors newBehavior)
@@ -107,21 +120,6 @@ public class EnforcerAI : enemyMove
 
     }
 
-    void SearchForTarget() 
-    {
-        Destination = lastLocationDetected.transform.position;
-        navAgent.SetDestination(Destination);
-        distance = Vector3.Distance(gameObject.transform.position, Destination);
-        if(distance <= 5)
-        {
-            isChase = true;
-            timeUntilUnaware = 0.0f;
-        }
-        else if(distance > 5)
-        {
-            
-        }
-    }
     void Patrol() //Specifics of control for moving between PatrolPoints
     {
         distance = Vector3.Distance(gameObject.transform.position, PatrolPoints[curPatrolPoint].position);
@@ -169,18 +167,39 @@ public class EnforcerAI : enemyMove
             }
             Destination = PatrolPoints[curPatrolPoint].position;
             navAgent.SetDestination(Destination);
+
+            Debug.Log("New Patrol Destination: " + Destination);
         }
 
     }
 
     void Wander() //Implements a random Ai Patrolling path in a specified area, based on an example in https://www.youtube.com/watch?v=dYs0WRzzoRc
     {
-        Vector3 point;
-        if (RandomPoint(lastLocationDetected.position, inspectionRange, out point))
-        {   
-            Debug.DrawRay(point, Vector3.up, Color.green, 1.0f); //Makes it visible with gizmos
-            navAgent.SetDestination(point);
+        // How long the enforcer has been searching
+        seekingTimer += Time.deltaTime;
+
+        // If the search time is up, give up and switch to patrolling.
+        if (seekingTimer >= 10.0f)
+        {
+            lastLocationDetected = null;
+            ChangeBehavior(Behaviors.Patrol);
+            return;
         }
+
+        // Pick a new random point if the enforcer has reached the last player location (also its current destination)
+        if (!navAgent.pathPending && navAgent.remainingDistance <= navAgent.stoppingDistance)
+        {
+            Vector3 point;
+            // Uses the last player location as the center of the search area.
+            if (RandomPoint(lastLocationDetected.position, inspectionRange, out point))
+            {
+                Debug.DrawRay(point, Vector3.up, Color.green, 1.0f); //Makes it visible with gizmos
+                navAgent.SetDestination(point);
+
+                Debug.Log("New Wander Destination: " + point);
+            }
+        }
+
     }
     bool RandomPoint(Vector3 center, float inspectionRange, out Vector3 result)
     {
@@ -200,6 +219,35 @@ public class EnforcerAI : enemyMove
 
     void CheckAware() //Specifics of logic for chasing mechanics, leads to either chasing, wandering, or returning to PatrolPoints
     {
-        
+        // If last player location is lost, return to patrolling.
+        if (lastLocationDetected == null)
+        {
+            isChase = false;
+            ChangeBehavior(Behaviors.Patrol);
+            return;
+        }
+
+        // Check distance to last player location
+        distance = Vector3.Distance(transform.position, lastLocationDetected.position);
+
+        if (distance <= 8.0f)
+        {
+            // Update destination to last player location
+            navAgent.SetDestination(lastLocationDetected.position);
+        }
+        else
+        {
+            // The player escaped the detection range
+            isChase = false;
+
+            Debug.Log("Player Lost. Last Known Point: " + lastLocationDetected.position);
+
+            // Initialize search vars then switch to searching state
+            inspectionRange = 10.0f; // Width of the search area
+            seekingTimer = 0.0f;     // Reset the search timer
+
+            // Transition to Searching
+            ChangeBehavior(Behaviors.Searching);
+        }
     }
 }
