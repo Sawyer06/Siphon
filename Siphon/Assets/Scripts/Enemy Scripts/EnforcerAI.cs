@@ -9,6 +9,10 @@ public class EnforcerAI : enemyMove
     public Transform noiseSource;
     public Transform lastLocationDetected;
 
+    public enum Behaviors { Idle, Patrol, Chase, Searching };
+    public Behaviors enforcerAiBehaviors = Behaviors.Idle;
+
+
     bool ReversePath = false;
     bool RestartPath = false;
     public int curPatrolPoint = 0;
@@ -34,15 +38,22 @@ public class EnforcerAI : enemyMove
 
         isChase = false;
         isSuspicious = false;
+
+        RestartPath = true;
+
+        enforcerAiBehaviors = Behaviors.Patrol;
+        RunBehaviors();
     }
 
     protected override void Update()
     {
+        RunBehaviors();
+
         if(isChase == true)
         {
             movementMultiplier = 1.5f;
             navAgent.speed = walkSpeed * movementMultiplier;
-
+            
         }
         else
         {
@@ -53,7 +64,7 @@ public class EnforcerAI : enemyMove
         if(isSuspicious)
             timeUntilUnaware += Time.deltaTime;
 
-        
+
     }
 
     private void OnTriggerEnter(Collider other)
@@ -67,7 +78,36 @@ public class EnforcerAI : enemyMove
         }
     }
 
-    void SearchForTarget()
+    void RunBehaviors()
+    {
+        switch (enforcerAiBehaviors)
+        {
+            case Behaviors.Idle:
+                Idle();
+                break;
+
+            case Behaviors.Patrol:
+                Patrol();
+                break;
+
+            case Behaviors.Chase:
+                CheckAware();
+                break;
+        }
+    }
+    void ChangeBehavior(Behaviors newBehavior)
+    {
+        enforcerAiBehaviors = newBehavior;
+
+        RunBehaviors();
+    }
+
+    void Idle()
+    {
+
+    }
+
+    void SearchForTarget() 
     {
         Destination = lastLocationDetected.transform.position;
         navAgent.SetDestination(Destination);
@@ -91,53 +131,44 @@ public class EnforcerAI : enemyMove
             Destination = PatrolPoints[curPatrolPoint].position;
             navAgent.SetDestination(Destination);
         }
-        else{
+        else
+        {
+            lastPatrolPoint = curPatrolPoint;
             if(ReversePath && !RestartPath)
             {
-                if(curPatrolPoint <= PatrolPoints.Length - 1)
+                if(curPatrolPoint <= 0)
                 {
-                    lastPatrolPoint = curPatrolPoint;
-                    curPatrolPoint += 1;
-                    Destination = PatrolPoints[curPatrolPoint].position;
-                    navAgent.SetDestination(Destination);
+                    curPatrolPoint = PatrolPoints.Length - 1;
                 }
                 else
                 {
-                    
+                    curPatrolPoint -= 1;
                 }
             }
             else if(!ReversePath && RestartPath)
             {
                 if(curPatrolPoint >= PatrolPoints.Length - 1)
                 {
-                    lastPatrolPoint = curPatrolPoint;
                     curPatrolPoint = 0;
-                    Destination = PatrolPoints[curPatrolPoint].position;
-                    navAgent.SetDestination(Destination);
                 }
                 else
                 {
-                    
+                    curPatrolPoint += 1;
                 }
             }
             else
             {
                 if (curPatrolPoint >= PatrolPoints.Length - 1)
                 {
-                    lastPatrolPoint = curPatrolPoint;
                     curPatrolPoint = 0;
-                    Destination = PatrolPoints[curPatrolPoint].position;
-                    navAgent.SetDestination(Destination);
-                    RestartPath = true;
                 }
                 else
                 {
-                    lastPatrolPoint = curPatrolPoint;
-                    curPatrolPoint++;
-                    Destination = PatrolPoints[curPatrolPoint].position;
-                    navAgent.SetDestination(Destination);
+                    curPatrolPoint += 1;
                 }
             }
+            Destination = PatrolPoints[curPatrolPoint].position;
+            navAgent.SetDestination(Destination);
         }
 
     }
@@ -166,7 +197,7 @@ public class EnforcerAI : enemyMove
         result = Vector3.zero;
         return false;
     }
-    
+
     void CheckAware() //Specifics of logic for chasing mechanics, leads to either chasing, wandering, or returning to PatrolPoints
     {
         
