@@ -8,11 +8,15 @@ public class EnforcerAI : enemyMove
     public Transform[] PatrolPoints;
     public Transform noiseSource;
     public Transform lastLocationDetected;
+
+    bool ReversePath = false;
+    bool RestartPath = false;
     public int curPatrolPoint = 0;
     public int lastPatrolPoint = 0;
     protected int closestPatrolPoint = 0;
     public NavMeshAgent navAgent;
     Vector3 Destination;
+
     protected float movementMultiplier = 0.9f;
     float distance;
     float inspectionRange;
@@ -82,9 +86,25 @@ public class EnforcerAI : enemyMove
     {
         distance = Vector3.Distance(gameObject.transform.position, PatrolPoints[curPatrolPoint].position);
 
+        if(distance > 2.0f)
+        {
+            
+        }
+
+        if(curPatrolPoint <= PatrolPoints.Length - 1)
+        {
+            curPatrolPoint++;
+            Destination = PatrolPoints[curPatrolPoint].position;
+        }
         if (curPatrolPoint >= PatrolPoints.Length - 1)
         {
             curPatrolPoint = 0;
+            Destination = PatrolPoints[curPatrolPoint].position;
+            navAgent.SetDestination(Destination);
+        }
+        else
+        {
+            curPatrolPoint++;
             Destination = PatrolPoints[curPatrolPoint].position;
             navAgent.SetDestination(Destination);
         }
