@@ -19,7 +19,8 @@ public class EnforcerAI : enemyMove
     float seekingTimer;
     float timeUntilUnaware;
 
-    public bool isChase;
+    public bool isChase; //for when the enforcer is directly following the player
+    public bool isSuspicious; //when the player's location is hinted by either grunts or the player making a noise
     protected override void Start()
     {
         navAgent = GetComponent<NavMeshAgent>();
@@ -28,6 +29,7 @@ public class EnforcerAI : enemyMove
 
 
         isChase = false;
+        isSuspicious = false;
     }
 
     protected override void Update()
@@ -44,7 +46,10 @@ public class EnforcerAI : enemyMove
             navAgent.speed = walkSpeed * movementMultiplier;
         }
 
+        if(isSuspicious)
+            timeUntilUnaware += Time.deltaTime;
 
+        
     }
 
     private void OnTriggerEnter(Collider other)
@@ -63,7 +68,15 @@ public class EnforcerAI : enemyMove
         Destination = lastLocationDetected.transform.position;
         navAgent.SetDestination(Destination);
         distance = Vector3.Distance(gameObject.transform.position, Destination);
-
+        if(distance <= 5)
+        {
+            isChase = true;
+            timeUntilUnaware = 0.0f;
+        }
+        else if(distance > 5)
+        {
+            
+        }
     }
     void Patrol() //Specifics of control for moving between PatrolPoints
     {
@@ -83,13 +96,23 @@ public class EnforcerAI : enemyMove
     {
         Vector3 point;
         if (RandomPoint(lastLocationDetected.position, inspectionRange, out point))
-        {
-            
+        {   
+            Debug.DrawRay(point, Vector3.up, Color.green, 1.0f); //Makes it visible with gizmos
+            navAgent.SetDestination(point);
         }
     }
     bool RandomPoint(Vector3 center, float inspectionRange, out Vector3 result)
     {
-        
+        Vector3 randomPoint = center + Random.insideUnitSphere * inspectionRange;
+        NavMeshHit hit;
+        if(NavMesh.SamplePosition(randomPoint, out hit, 1.0f, NavMesh.AllAreas)) //documentation: https://docs.unity3d.com/ScriptReference/AI.NavMesh.SamplePosition.html
+        {
+            //the 1.0f is the max distance from the random point to a point on the navmesh, might want to increase if range is big
+            //or add a for loop like in the documentation
+            result = hit.position;
+            return true;
+        }
+
         result = Vector3.zero;
         return false;
     }
