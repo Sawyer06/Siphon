@@ -12,7 +12,7 @@ public class EnforcerAI : enemyMove
     bool ReversePath = false;
     bool RestartPath = false;
     public int curPatrolPoint = 0;
-    public int lastPatrolPoint = 0;
+    public int lastPatrolPoint = 0; //Exists in case Patrol function gets interupted, so it has the option to return to a previous patrol point
     protected int closestPatrolPoint = 0;
     public NavMeshAgent navAgent;
     Vector3 Destination;
@@ -88,27 +88,57 @@ public class EnforcerAI : enemyMove
 
         if(distance > 2.0f)
         {
-            
-        }
-
-        if(curPatrolPoint <= PatrolPoints.Length - 1)
-        {
-            curPatrolPoint++;
-            Destination = PatrolPoints[curPatrolPoint].position;
-        }
-        if (curPatrolPoint >= PatrolPoints.Length - 1)
-        {
-            curPatrolPoint = 0;
             Destination = PatrolPoints[curPatrolPoint].position;
             navAgent.SetDestination(Destination);
         }
-        else
-        {
-            curPatrolPoint++;
-            Destination = PatrolPoints[curPatrolPoint].position;
-            navAgent.SetDestination(Destination);
+        else{
+            if(ReversePath && !RestartPath)
+            {
+                if(curPatrolPoint <= PatrolPoints.Length - 1)
+                {
+                    lastPatrolPoint = curPatrolPoint;
+                    curPatrolPoint += 1;
+                    Destination = PatrolPoints[curPatrolPoint].position;
+                    navAgent.SetDestination(Destination);
+                }
+                else
+                {
+                    
+                }
+            }
+            else if(!ReversePath && RestartPath)
+            {
+                if(curPatrolPoint >= PatrolPoints.Length - 1)
+                {
+                    lastPatrolPoint = curPatrolPoint;
+                    curPatrolPoint = 0;
+                    Destination = PatrolPoints[curPatrolPoint].position;
+                    navAgent.SetDestination(Destination);
+                }
+                else
+                {
+                    
+                }
+            }
+            else
+            {
+                if (curPatrolPoint >= PatrolPoints.Length - 1)
+                {
+                    lastPatrolPoint = curPatrolPoint;
+                    curPatrolPoint = 0;
+                    Destination = PatrolPoints[curPatrolPoint].position;
+                    navAgent.SetDestination(Destination);
+                    RestartPath = true;
+                }
+                else
+                {
+                    lastPatrolPoint = curPatrolPoint;
+                    curPatrolPoint++;
+                    Destination = PatrolPoints[curPatrolPoint].position;
+                    navAgent.SetDestination(Destination);
+                }
+            }
         }
-
 
     }
 
@@ -136,6 +166,7 @@ public class EnforcerAI : enemyMove
         result = Vector3.zero;
         return false;
     }
+    
     void CheckAware() //Specifics of logic for chasing mechanics, leads to either chasing, wandering, or returning to PatrolPoints
     {
         
