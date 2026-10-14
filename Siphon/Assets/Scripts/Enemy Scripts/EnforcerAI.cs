@@ -78,7 +78,7 @@ public class EnforcerAI : enemyMove
             float currentDistance = Vector3.Distance(transform.position, lastLocationDetected.position);
 
             // If player is in range and enforcer is not currently chasing, switch behavior state.
-            if (currentDistance <= 5.0f && enforcerAiBehaviors != Behaviors.Chase)
+            if (currentDistance <= 8.0f && enforcerAiBehaviors != Behaviors.Chase)
             {
                 isChase = true;
                 timeUntilUnaware = 0.0f;
