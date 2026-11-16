@@ -10,6 +10,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float sprintSpeed;
     [SerializeField] private float crouchSpeed;
 
+    public bool isHiding;
+
     private float speed;
     private Vector3 movement;
 
