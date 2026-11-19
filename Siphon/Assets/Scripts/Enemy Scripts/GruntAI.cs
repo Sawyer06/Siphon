@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
@@ -14,6 +15,10 @@ public class GruntAI : enemyMove
     public float SafePlaceTimeLimit;
     public Transform RunAwayLocation;
 
+    public float scoutingGiveUpTime = 10.0f;
+    public float scoutingRadius = 5.0f;
+    private bool scouting;
+
     protected override void Start()
     {
         Agent = GetComponent<NavMeshAgent>();
@@ -25,32 +30,35 @@ public class GruntAI : enemyMove
 
     protected override void Update()
     {
-        if (CurrentPatrolPoint == 0 && PatrolTime != 0 && Agent.remainingDistance <= Agent.stoppingDistance)
+        if (!scouting) // Grunt's default behavior, when not receiving orders from director.
         {
-            Debug.Log(PatrolTime.ToString());
-            PatrolTime = 0;
-        }
-        PatrolTime += Time.deltaTime;
-        if (Agent.isStopped && Hiding)
-        {
-            TimeInSafePlace += Time.deltaTime;
-        }
-        if (TimeInSafePlace > SafePlaceTimeLimit)
-        {
-            Hiding = false;
-            TimeInSafePlace = 0;
-            Agent.isStopped = false;
-            desiredLocation = PatrolPoints[CurrentPatrolPoint].position;
-            Agent.destination = desiredLocation;
-        }
-        if (Hiding == false)
-        {
-            if (Agent.remainingDistance <= Agent.stoppingDistance)
+            if (CurrentPatrolPoint == 0 && PatrolTime != 0 && Agent.remainingDistance <= Agent.stoppingDistance)
             {
-                Agent.speed = walkSpeed;
-                Agent.destination = PatrolPoints[CurrentPatrolPoint].position;
+                Debug.Log(PatrolTime.ToString());
+                PatrolTime = 0;
+            }
+            PatrolTime += Time.deltaTime;
+            if (Agent.isStopped && Hiding)
+            {
+                TimeInSafePlace += Time.deltaTime;
+            }
+            if (TimeInSafePlace > SafePlaceTimeLimit)
+            {
+                Hiding = false;
+                TimeInSafePlace = 0;
+                Agent.isStopped = false;
                 desiredLocation = PatrolPoints[CurrentPatrolPoint].position;
-                CurrentPatrolPoint = (CurrentPatrolPoint + 1) % PatrolPoints.Length;
+                Agent.destination = desiredLocation;
+            }
+            if (Hiding == false)
+            {
+                if (Agent.remainingDistance <= Agent.stoppingDistance)
+                {
+                    Agent.speed = walkSpeed;
+                    Agent.destination = PatrolPoints[CurrentPatrolPoint].position;
+                    desiredLocation = PatrolPoints[CurrentPatrolPoint].position;
+                    CurrentPatrolPoint = (CurrentPatrolPoint + 1) % PatrolPoints.Length;
+                }
             }
         }
     }
@@ -66,6 +74,7 @@ public class GruntAI : enemyMove
                     LastPlayerLocation = other.transform.position;
                     Agent.destination = RunAwayLocation.position;
                     Agent.speed = runSpeed;
+                    scouting = false;
                 }
             }
         }
@@ -75,6 +84,7 @@ public class GruntAI : enemyMove
             if ((foundDistraction = other.gameObject.GetComponent<Distraction>()).isActivated)
             {
                 foundDistraction.Deactivate();
+                //scouting = false;
             }
         }
         if (other.gameObject.transform == RunAwayLocation) // Stops Grunt when reaching RunAwayLocation.*Notice* Give LastPlayerLocation to Director in this check *Notice*
@@ -94,5 +104,33 @@ public class GruntAI : enemyMove
                 Agent.destination = other.transform.position;
             }
         }
+    }
+
+    /// Director calls this with player last seen position.
+    public void ScoutArea(Vector3 position)
+    {
+        scouting = true;
+
+        StartCoroutine(ScoutGiveUpTimer());
+        StartCoroutine(ScoutSearch(position));
+    }
+
+    /// Timer to wait until returning to regular patrol.
+    private IEnumerator ScoutGiveUpTimer()
+    {
+        yield return new WaitForSeconds(scoutingGiveUpTime);
+        scouting = false;
+    }
+
+    /// Look around in the general area of the received player location.
+    private IEnumerator ScoutSearch(Vector3 position)
+    {
+        Agent.destination = position + (new Vector3(Random.insideUnitCircle.x, 0, Random.insideUnitCircle.y) * scoutingRadius);
+        yield return new WaitForSeconds(5.0f);
+
+        if (scouting)
+            StartCoroutine(ScoutSearch(position));
+        else
+            Debug.Log("Grunt finished scouting");
     }
 }
