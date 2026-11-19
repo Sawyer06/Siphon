@@ -37,11 +37,45 @@ public class DirectorScript : MonoBehaviour
         }
     }
 
+    public void alertNearestGrunt(Vector3 playerLocation)
+    {
+        GruntAI[] allGrunts = FindObjectsByType<GruntAI>(FindObjectsSortMode.None);
+
+        GruntAI closestGruntScript = null;
+        float closestDistance = 99999;
+
+        //go through all enforcers, find which is closest
+        for (int i = 0; i < allGrunts.Length; i++)
+        {
+            GruntAI thisGruntScript = allGrunts[i];
+            GameObject gruntObject = thisGruntScript.GameObject();
+
+            float dist = Vector3.Distance(gruntObject.transform.position, playerLocation);
+
+            if (dist < closestDistance)
+            {
+                closestDistance = dist;
+                closestGruntScript = thisGruntScript;
+            }
+        }
+
+        //send message to enforcer
+        if (closestGruntScript != null)
+        {
+            //////////////////////////////////
+
+            closestGruntScript.ScoutArea(playerLocation);
+
+            /////////////////////////////////
+        }
+    }
+
     public void cameraSpottedPlayer(Vector3 playerLocation)
     {
         UnityEngine.Debug.Log("SEEN BY DIRECTOR");
 
-        alertNearestEnforcer(playerLocation);
+        //alertNearestEnforcer(playerLocation);
+        alertNearestGrunt(playerLocation);
 
     }
 
