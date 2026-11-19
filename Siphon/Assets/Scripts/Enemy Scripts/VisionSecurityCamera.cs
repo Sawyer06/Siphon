@@ -3,9 +3,9 @@ using UnityEngine;
 
 //largely based on https://www.youtube.com/watch?v=kMHwy-unZ5M 
 
-public class enemyVision : MonoBehaviour
+public class VisionSecurityCamera : MonoBehaviour
 {
-    public DirectorScript director;
+    private DirectorScript directorScript;
     private bool playerAlreadySpotted;
 
     public float detectRange = 15;
@@ -13,10 +13,13 @@ public class enemyVision : MonoBehaviour
 
     bool isInAngle, isInRange, isNotHidden;
 
-    public GameObject Player;
+    private GameObject Player;
     void Start()
     {
-        playerAlreadySpotted = false;
+        this.playerAlreadySpotted = false;
+        this.Player = FindFirstObjectByType<PlayerController>().gameObject;
+        this.directorScript = FindFirstObjectByType<DirectorScript>();
+
     }
 
     // Update is called once per frame
@@ -64,6 +67,21 @@ public class enemyVision : MonoBehaviour
                                 director.cameraSpottedPlayer(lastSeenLocation);*/
                 UnityEngine.Debug.Log("SEEN BY CAMERA");
                 playerAlreadySpotted = true;
+
+
+
+
+                    Vector3 playerLocation = Player.transform.position;
+
+                if (directorScript != null)
+                {
+                    directorScript.cameraSpottedPlayer(playerLocation);
+                }
+                else
+                {
+                    UnityEngine.Debug.Log("ENEMYVISION DIRECTOR NOT ASSIGNED");
+                }
+
             }
             
         }
