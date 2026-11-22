@@ -12,6 +12,7 @@ public class Locker : MonoBehaviour
 
     private bool isOpen = false;
 
+    private bool canInteract;
 
     private PlayerController player;
 
@@ -21,17 +22,20 @@ public class Locker : MonoBehaviour
         openButtonPrompt.text = openAction.action.GetBindingDisplayString();
 
         player = GameObject.Find("Player").GetComponent<PlayerController>();
+
+        openAction.action.started += ctx =>
+        {
+            if (canInteract)
+                ToggleOpen();
+        };
     }
 
-    private void OnTriggerStay(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.CompareTag("Player")) // Player can activate distractions when in their area.
         {
             openButtonPrompt.enabled = true;
-            openAction.action.started += ctx =>
-            {
-                ToggleOpen();
-            };
+            canInteract = true;
         }
     }
     private void OnTriggerExit(Collider other)
@@ -39,6 +43,7 @@ public class Locker : MonoBehaviour
         if (other.gameObject.CompareTag("Player"))
         {
             openButtonPrompt.enabled = false;
+            canInteract = false;
         }
     }
 
@@ -47,7 +52,7 @@ public class Locker : MonoBehaviour
         isOpen = !isOpen;
 
         doorAnimator.SetBool("open", isOpen);
-        Invoke("CanInteractAgain", 0.1f);
+        //Invoke("CanInteractAgain", 0.1f);
     }
 
     private void OnCollisionStay(Collision collision)
