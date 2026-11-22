@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.SocialPlatforms.GameCenter;
 
 public class EnforcerAI : enemyMove
 {
@@ -17,7 +16,7 @@ public class EnforcerAI : enemyMove
     public DirectorScript director;
 
     // Detection and Chase configurations
-    public float detectionRange;
+    public float detectionRange = 8.0f;
     public bool requireLineOfSight = true;
     public float eyeHeight = 1.2f;
     public LayerMask lineOfSightMask = ~0;
@@ -64,11 +63,9 @@ public class EnforcerAI : enemyMove
     // So no enforcers claim the same locker and try to inspect the same locker at the same time.
     private static readonly HashSet<Locker> ClaimedLockers = new HashSet<Locker>();
 
-
-    private static void ResetLockerState()
-    {
-        ClaimedLockers.Clear();
-    }
+    // !!!!!!!!!!!!!!!!!!!!!
+    // BEWARE: METHODS BELOW
+    // !!!!!!!!!!!!!!!!!!!!!
 
     protected override void Start()
     {
@@ -147,6 +144,11 @@ public class EnforcerAI : enemyMove
 
         lastLocationDetected = other.transform;
         lastKnownPosition = other.transform.position;
+
+        if (enforcerAiBehaviors != Behaviors.Chase)
+        {
+            StartChase(other.transform);
+        }
     }
 
     private bool CanSeePlayer(Transform playerTransform)
@@ -305,6 +307,11 @@ public class EnforcerAI : enemyMove
 
     private void StartChase(Transform playerTransform)
     {
+        // If in the middle of taking a report from a grunt we should stop doing that to prioritize chasing the player.
+        isWithGrunt = false;
+        if (navAgent != null && navAgent.isOnNavMesh)
+            navAgent.isStopped = false;
+
         ReleaseTargetLocker();
         checkedLockers.Clear();
 
@@ -477,7 +484,7 @@ public class EnforcerAI : enemyMove
         if (RandomPoint(center, range, out point))
         {
             Debug.DrawRay(point, Vector3.up, Color.green, 1.0f); //Makes it visible with gizmos
-            navAgent.SetDestination(point);
+            SetDestination(point);
 
             Debug.Log("New Wander Destination: " + point);
         }
@@ -539,6 +546,8 @@ public class EnforcerAI : enemyMove
     // Finds the closest unchecked locker.
     private Locker FindNearbyUncheckedLocker()
     {
+        ClaimedLockers.RemoveWhere(locker => locker == null);
+
         Locker[] allLockers = FindObjectsByType<Locker>(FindObjectsSortMode.None);
         Locker closest = null;
         float closestDistance = float.MaxValue;
