@@ -37,7 +37,7 @@ public class DirectorScript : MonoBehaviour
         {
             //////////////////////////////////
 
-            //closestEnforcerScript.PLAYER_SPOTTED_GO_HERE();
+            closestEnforcerScript.InvestigateLocation(playerLocation, this.alertLevel);
 
             /////////////////////////////////
         }
@@ -80,8 +80,8 @@ public class DirectorScript : MonoBehaviour
     {
         UnityEngine.Debug.Log("SEEN BY DIRECTOR");
 
-        //alertNearestEnforcer(playerLocation);
-        alertNearestGrunt(playerLocation);
+        alertNearestEnforcer(playerLocation);
+        //alertNearestGrunt(playerLocation);
 
         float alertLevelIncrease = 1.0f;
 
@@ -164,6 +164,12 @@ public class DirectorScript : MonoBehaviour
             {
                 this.alertLevel -= reduceAlertByThisMuch;
                 //UnityEngine.Debug.Log("CURRENT ALERT LEVEL: " + this.alertLevel);
+
+                EnforcerAI[] allEnforcers = FindObjectsByType<EnforcerAI>(FindObjectsSortMode.None);
+                for (int i = 0; i < allEnforcers.Length; i++)
+                {
+                    allEnforcers[i].UpdateAlertLevel(this.alertLevel);
+                }
             }
             else
             {

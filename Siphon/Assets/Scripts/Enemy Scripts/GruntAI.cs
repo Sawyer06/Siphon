@@ -72,6 +72,33 @@ public class GruntAI : enemyMove
                 if (Player.isHiding == false)
                 {
                     LastPlayerLocation = other.transform.position;
+
+                    //find nearest enforcer, make this the RunAwayLocation
+                    /////////////////////////////////////
+                    EnforcerAI[] allEnforcers = FindObjectsByType<EnforcerAI>(FindObjectsSortMode.None);
+
+                    EnforcerAI closestEnforcerScript = null;
+                    float closestDistance = 99999;
+
+                    //go through all enforcers, find which is closest
+                    for (int i = 0; i < allEnforcers.Length; i++)
+                    {
+                        EnforcerAI thisEnforcerScript = allEnforcers[i];
+                        GameObject enforcer = thisEnforcerScript.GameObject();
+
+                        float dist = Vector3.Distance(enforcer.transform.position, this.gameObject.transform.position);
+
+                        if (dist < closestDistance)
+                        {
+                            closestDistance = dist;
+                            closestEnforcerScript = thisEnforcerScript;
+                        }
+                    }
+
+                    RunAwayLocation = closestEnforcerScript.transform;
+                    /////////////////////////////////////
+
+
                     Agent.destination = RunAwayLocation.position;
                     Agent.speed = runSpeed;
                     scouting = false;
