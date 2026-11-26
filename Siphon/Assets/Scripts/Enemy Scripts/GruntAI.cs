@@ -19,6 +19,13 @@ public class GruntAI : enemyMove
     public float scoutingRadius = 5.0f;
     private bool scouting;
 
+    //////////
+    private DirectorScript directorScript;
+    private EnforcerAI closestEnforcerScript;
+
+    private bool needsToReportToEnforcer = false;
+    //////////
+
     protected override void Start()
     {
         Agent = GetComponent<NavMeshAgent>();
@@ -26,6 +33,8 @@ public class GruntAI : enemyMove
         desiredLocation = PatrolPoints[CurrentPatrolPoint].position;
         Agent.destination = desiredLocation;
         CurrentPatrolPoint = (CurrentPatrolPoint + 1) % PatrolPoints.Length;
+
+        this.directorScript = FindFirstObjectByType<DirectorScript>();
     }
 
     protected override void Update()
@@ -34,7 +43,7 @@ public class GruntAI : enemyMove
         {
             if (CurrentPatrolPoint == 0 && PatrolTime != 0 && Agent.remainingDistance <= Agent.stoppingDistance)
             {
-                Debug.Log(PatrolTime.ToString());
+                //Debug.Log(PatrolTime.ToString());
                 PatrolTime = 0;
             }
             PatrolTime += Time.deltaTime;
@@ -75,27 +84,13 @@ public class GruntAI : enemyMove
 
                     //find nearest enforcer, make this the RunAwayLocation
                     /////////////////////////////////////
-                    EnforcerAI[] allEnforcers = FindObjectsByType<EnforcerAI>(FindObjectsSortMode.None);
-
-                    EnforcerAI closestEnforcerScript = null;
-                    float closestDistance = 99999;
-
-                    //go through all enforcers, find which is closest
-                    for (int i = 0; i < allEnforcers.Length; i++)
-                    {
-                        EnforcerAI thisEnforcerScript = allEnforcers[i];
-                        GameObject enforcer = thisEnforcerScript.GameObject();
-
-                        float dist = Vector3.Distance(enforcer.transform.position, this.gameObject.transform.position);
-
-                        if (dist < closestDistance)
-                        {
-                            closestDistance = dist;
-                            closestEnforcerScript = thisEnforcerScript;
-                        }
-                    }
+                    this.closestEnforcerScript = this.directorScript.findNearestEnforcer(this.gameObject.transform.position);
 
                     RunAwayLocation = closestEnforcerScript.transform;
+
+                    closestEnforcerScript.SetGruntInteractionPause(true);
+
+                    this.needsToReportToEnforcer = true;
                     /////////////////////////////////////
 
 
@@ -114,10 +109,17 @@ public class GruntAI : enemyMove
                 //scouting = false;
             }
         }
-        if (other.gameObject.transform == RunAwayLocation) // Stops Grunt when reaching RunAwayLocation.*Notice* Give LastPlayerLocation to Director in this check *Notice*
+
+        //if (other.gameObject.transform == RunAwayLocation) // Stops Grunt when reaching RunAwayLocation.*Notice* Give LastPlayerLocation to Director in this check *Notice*
+        if (other.gameObject.GetComponent<EnforcerAI>() && this.needsToReportToEnforcer == true)
         {
             Agent.isStopped = true;
             Hiding = true;
+
+            this.closestEnforcerScript.ReceiveGruntReport(this.LastPlayerLocation);
+            UnityEngine.Debug.Log("REPORT GIVEN TO ENFORCER");
+            this.needsToReportToEnforcer = false;
+
         }
     }
 
@@ -158,6 +160,9 @@ public class GruntAI : enemyMove
         if (scouting)
             StartCoroutine(ScoutSearch(position));
         else
-            Debug.Log("Grunt finished scouting");
+        {
+            //Debug.Log("Grunt finished scouting");
+        }
+
     }
 }

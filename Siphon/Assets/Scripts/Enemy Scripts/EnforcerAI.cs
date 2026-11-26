@@ -225,14 +225,19 @@ public class EnforcerAI : enemyMove
 
         isSuspicious = true;
 
+
+        ///// ~~~we only need to investigate location, there is no chase yet~~~ ///// --Shane 11/26/2026
+
         // Relay the report to the director
-        if (director != null)
-        {
-            director.enforcerReportsChaseHasStarted(reportedPlayerPosition);
-        }
+        //if (director != null)
+        //{
+        //    director.enforcerReportsChaseHasStarted(reportedPlayerPosition);
+        //}
+
 
         if (!isChase)
         {
+            UnityEngine.Debug.Log("GRUNT REPORT RECEIVED");
             InvestigateLocation(reportedPlayerPosition, currentAlertLevel);
         }
     }
@@ -486,7 +491,7 @@ public class EnforcerAI : enemyMove
             Debug.DrawRay(point, Vector3.up, Color.green, 1.0f); //Makes it visible with gizmos
             SetDestination(point);
 
-            Debug.Log("New Wander Destination: " + point);
+            //Debug.Log("New Wander Destination: " + point);
         }
     }
 

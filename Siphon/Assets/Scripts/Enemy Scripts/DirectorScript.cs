@@ -8,9 +8,7 @@ public class DirectorScript : MonoBehaviour
     private float timeUntilAlertReduction; //every x seconds, alertLevel is reduced a little
     private float maxTimeUntilAlertReduction;
 
-    //private bool playerChaseInProgress;
-
-    public void alertNearestEnforcer(Vector3 playerLocation)
+    public EnforcerAI findNearestEnforcer(Vector3 currentLocation)
     {
         EnforcerAI[] allEnforcers = FindObjectsByType<EnforcerAI>(FindObjectsSortMode.None);
 
@@ -23,7 +21,7 @@ public class DirectorScript : MonoBehaviour
             EnforcerAI thisEnforcerScript = allEnforcers[i];
             GameObject enforcer = thisEnforcerScript.GameObject();
 
-            float dist = Vector3.Distance(enforcer.transform.position, playerLocation);
+            float dist = Vector3.Distance(enforcer.transform.position, currentLocation);
 
             if (dist < closestDistance)
             {
@@ -31,6 +29,33 @@ public class DirectorScript : MonoBehaviour
                 closestEnforcerScript = thisEnforcerScript;
             }
         }
+
+        return closestEnforcerScript;
+    }
+
+    public void alertNearestEnforcer(Vector3 playerLocation)
+    {
+        //EnforcerAI[] allEnforcers = FindObjectsByType<EnforcerAI>(FindObjectsSortMode.None);
+
+        //EnforcerAI closestEnforcerScript = null;
+        //float closestDistance = 99999;
+
+        ////go through all enforcers, find which is closest
+        //for (int i = 0; i < allEnforcers.Length; i++)
+        //{
+        //    EnforcerAI thisEnforcerScript = allEnforcers[i];
+        //    GameObject enforcer = thisEnforcerScript.GameObject();
+
+        //    float dist = Vector3.Distance(enforcer.transform.position, playerLocation);
+
+        //    if (dist < closestDistance)
+        //    {
+        //        closestDistance = dist;
+        //        closestEnforcerScript = thisEnforcerScript;
+        //    }
+        //}
+
+        EnforcerAI closestEnforcerScript = this.findNearestEnforcer(playerLocation);
 
         //send message to enforcer
         if (closestEnforcerScript != null)
@@ -95,7 +120,7 @@ public class DirectorScript : MonoBehaviour
     public void enforcerReportsFailedChase(Vector3 playerLastLocation, EnforcerAI thisEnforcer)
     {
         //tell thisEnforcer to go back to post
-        /////DO STUFF HERE, MAKE SURE TO SET STATE TO NOT CHASING
+        thisEnforcer.ReturnToPost();
 
         //loop through all enforcers, make sure no one is still chasing
         EnforcerAI[] allEnforcers = FindObjectsByType<EnforcerAI>(FindObjectsSortMode.None);
